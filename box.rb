@@ -21,8 +21,30 @@ FOAM_THICKNESS=(3.0/16) * 72.0
 
 xc, yc, zc = ARGV[0..2].map(&:to_f)
 
-page_layout = xc > yc ? :landscape : :portrait
-Prawn::Document.generate "out.pdf", :page_layout => page_layout do |pdf|
+def extents(xc,yc,zc)
+  x_extents = (zc+FOAM_THICKNESS)+(xc+FOAM_THICKNESS*2)+(zc+FOAM_THICKNESS)
+  y_extents = (zc+FOAM_THICKNESS)+(yc+FOAM_THICKNESS*2)+(zc+FOAM_THICKNESS)
+  [x_extents, y_extents]
+end
+
+def page_size(xc,yc,zc)
+  extents = extents(xc, yc, zc).sort
+  a_extents, b_extents = extents
+  if a_extents > (8.5-0.5*2)*72.0 ||
+      b_extents > (11.0-0.5*2)*72.0
+    extents.map {|e| e+1.0*72.0 }
+  else
+    "LETTER"
+  end
+end
+
+def page_layout(xc,yc,zc)
+  x_extents, y_extents = extents(xc, yc, zc)
+  x_extents > y_extents ? :landscape : :portrait
+end
+
+Prawn::Document.generate "out.pdf", :page_layout => page_layout(xc, yc, zc),
+                                    :page_size => page_size(xc, yc, zc) do |pdf|
   pdf.stroke do
     pdf.stroke_color = "000000"
     pdf.move_to zc+FOAM_THICKNESS, zc+FOAM_THICKNESS
